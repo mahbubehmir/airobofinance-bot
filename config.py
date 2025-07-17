@@ -23,7 +23,7 @@ DB_CONFIG = {
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
 
-print("✅ فایل config.py با موفقیت اجرا شد.")
-print("توکن:", BOT_TOKEN)
-print("تنظیمات دیتابیس:", DB_CONFIG)
-
+if __name__ == "__main__":
+    print("✅ فایل config.py با موفقیت اجرا شد.")
+    print("توکن:", BOT_TOKEN)
+    print("تنظیمات دیتابیس:", DB_CONFIG)
