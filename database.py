@@ -9,9 +9,6 @@ logger = logging.getLogger(__name__)
 
 def create_tables():
     """ایجاد جداول مورد نیاز در دیتابیس"""
-    conn = None
-    cur = None
-
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor()
@@ -53,11 +50,11 @@ def create_tables():
                 amount DECIMAL(10, 2) NOT NULL CHECK (amount > 0),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE (user_id, category)
+                UNIQUE (user_id, category)  -- هر کاربر فقط یک بودجه برای هر دسته‌بندی
             );
         """))
         
-        # ایندکس برای بهبود عملکرد
+        # ایجاد ایندکس‌ها برای بهبود عملکرد
         cur.execute(sql.SQL("""
             CREATE INDEX IF NOT EXISTS idx_transactions_user_date 
             ON transactions(user_id, created_at);
@@ -66,18 +63,11 @@ def create_tables():
         conn.commit()
         logger.info("✅ جداول با موفقیت ایجاد شدند.")
         
-    except psycopg2.OperationalError as e:
-        logger.error(f"❌ خطای اتصال به دیتابیس: {e}")
     except psycopg2.Error as e:
-        logger.error(f"❌ خطا در اجرای کوئری: {e}")
-        if conn:
-            conn.rollback()
+        logger.error(f"خطا در ایجاد جداول: {e}")
+        conn.rollback()
     finally:
         if cur:
             cur.close()
         if conn:
             conn.close()
-
-# ✅ اجرای تابع
-if __name__ == '__main__':
-    create_tables()
