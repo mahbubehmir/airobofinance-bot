@@ -1,9 +1,9 @@
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
-from config import TOKEN
+from config import BOT_TOKEN
 from handlers import start, record_income, record_expense, show_report, set_budget
 
 def main():
-    app = ApplicationBuilder().token(TOKEN).build()
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.Regex("^📊 گزارش$"), show_report))
