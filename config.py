@@ -1,16 +1,13 @@
 import os
 from dotenv import load_dotenv
+import psycopg2
+import logging
 
 load_dotenv()
 
-# توکن ربات
-TOKEN = os.getenv('BOT_TOKEN')
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+DATABASE_URL = os.getenv('DATABASE_URL')
 
-# اطلاعات اتصال به پایگاه داده
-DB_CONFIG = {
-    'dbname': os.getenv('DB_NAME'),
-    'user': os.getenv('DB_USER'),
-    'password': os.getenv('DB_PASSWORD'),
-    'host': os.getenv('DB_HOST'),
-    'port': os.getenv('DB_PORT')
-}
+# اتصال به دیتابیس
+def connect_db():
+    return psycopg2.connect(DATABASE_URL)
