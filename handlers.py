@@ -1,5 +1,3 @@
-```python
-# handlers.py
 from telegram import ReplyKeyboardMarkup, Update
 from telegram.ext import ContextTypes, ConversationHandler, MessageHandler, CommandHandler, filters
 from datetime import datetime
@@ -86,50 +84,3 @@ def main_menu():
         [['📊 گزارش', '➕ درآمد'], ['➖ هزینه', '💰 تنظیم بودجه']],
         resize_keyboard=True
     )
-```
-
-```python
-# main.py
-from telegram.ext import ApplicationBuilder, ConversationHandler, MessageHandler, CommandHandler, filters
-from config import BOT_TOKEN
-from handlers import (
-    start,
-    record_income_start,
-    record_expense_start,
-    amount_received,
-    show_report,
-    set_budget_start,
-    budget_received,
-    cancel,
-    AMOUNT
-)
-
-app = ApplicationBuilder().token(BOT_TOKEN).build()
-
-conv_handler = ConversationHandler(
-    entry_points=[
-        MessageHandler(filters.Regex('^➕ درآمد$'), record_income_start),
-        MessageHandler(filters.Regex('^➖ هزینه$'), record_expense_start),
-        MessageHandler(filters.Regex('^💰 تنظیم بودجه$'), set_budget_start),
-    ],
-    states={
-        AMOUNT: [MessageHandler(filters.TEXT & ~filters.COMMAND, amount_received),
-                 MessageHandler(filters.TEXT & ~filters.COMMAND, budget_received)]
-    },
-    fallbacks=[CommandHandler('cancel', cancel)]
-)
-
-# Handlers
-app.add_handler(CommandHandler('start', start))
-app.add_handler(conv_handler)
-app.add_handler(MessageHandler(filters.Regex('^📊 گزارش$'), show_report))
-
-app.run_polling()
-```
-
-*با این تغییرات:*
-- وقتی کاربر «➕ درآمد» یا «➖ هزینه» یا «💰 تنظیم بودجه» را می‌زند، وارد حالت `ConversationHandler` می‌شود.
-- پس از دریافت مبلغ، تراکنش‌ها و بودجه ذخیره و منوی اصلی دوباره نمایش داده می‌شود.
-- گزارش مالی بر اساس مقادیر ذخیره‌شده محاسبه می‌شود.
-
-فقط این دو فایل (`handlers.py` و `main.py`) را جایگزین فایل‌های فعلی کن، commit و push کن و دوباره سرویس را Deploy کن. اکنون مقادیر درآمد و هزینه در گزارش نمایش داده خواهند شد.
