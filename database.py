@@ -1,73 +1,38 @@
+# database.py
+import os
 import psycopg2
-from psycopg2 import sql
-from config import DB_CONFIG
-import logging
+from urllib.parse import urlparse
 
-# تنظیمات لاگ‌گیری
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-def create_tables():
-    """ایجاد جداول مورد نیاز در دیتابیس"""
-    try:
-        conn = psycopg2.connect(**DB_CONFIG)
-        cur = conn.cursor()
-        
-        logger.info("اتصال به دیتابیس برقرار شد. در حال ایجاد جداول...")
-        
-        # ایجاد جدول کاربران
-        cur.execute(sql.SQL("""
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                telegram_id BIGINT UNIQUE NOT NULL,
-                username VARCHAR(100),
-                full_name VARCHAR(200),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """))
-        
-        # ایجاد جدول تراکنش‌ها
-        cur.execute(sql.SQL("""
-            CREATE TABLE IF NOT EXISTS transactions (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                amount DECIMAL(10, 2) NOT NULL CHECK (amount > 0),
-                type VARCHAR(10) NOT NULL CHECK (type IN ('income', 'expense')),
-                category VARCHAR(50) NOT NULL,
-                description TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """))
-        
-        # ایجاد جدول بودجه‌ها
-        cur.execute(sql.SQL("""
-            CREATE TABLE IF NOT EXISTS budgets (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                category VARCHAR(50) NOT NULL,
-                amount DECIMAL(10, 2) NOT NULL CHECK (amount > 0),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE (user_id, category)  -- هر کاربر فقط یک بودجه برای هر دسته‌بندی
-            );
-        """))
-        
-        # ایجاد ایندکس‌ها برای بهبود عملکرد
-        cur.execute(sql.SQL("""
-            CREATE INDEX IF NOT EXISTS idx_transactions_user_date 
-            ON transactions(user_id, created_at);
-        """))
-        
-        conn.commit()
-        logger.info("✅ جداول با موفقیت ایجاد شدند.")
-        
-    except psycopg2.Error as e:
-        logger.error(f"خطا در ایجاد جداول: {e}")
-        conn.rollback()
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
+def get_conn():
+    return psycopg2.connect(DATABASE_URL)
+
+def insert_transaction(user_id: int, amount: float, t_type: str):
+    """درج درآمد یا هزینه در جدول transactions"""
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO transactions (user_id, amount, type) VALUES (%s, %s, %s)",
+        (user_id, amount, t_type)
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+
+def get_monthly_totals(user_id: int):
+    """برگرداندن مجموع درآمد و هزینه کاربر در ماه جاری"""
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT type, COALESCE(SUM(amount),0) 
+        FROM transactions 
+        WHERE user_id=%s 
+          AND date_trunc('month', created_at)=date_trunc('month', CURRENT_DATE)
+        GROUP BY type
+    """, (user_id,))
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    # تبدیل به دیکشن {'income': X, 'expense': Y}
+    return { r[0]: float(r[1]) for r in rows }
