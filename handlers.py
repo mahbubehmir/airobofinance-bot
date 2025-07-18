@@ -1,25 +1,26 @@
-from telegram import ReplyKeyboardMarkup
+from telegram import ReplyKeyboardMarkup, Update
+from telegram.ext import ContextTypes
 from datetime import datetime
 
 # لیست موقت برای ذخیره تراکنش‌ها
 transactions = []
 budgets = {}
 
-def start(update, context):
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.message.from_user
-    update.message.reply_text(
+    await update.message.reply_text(
         f"سلام {user.first_name}! به ربات مدیریت مالی خوش آمدید.\n"
         "لطفاً از منوی زیر انتخاب کنید:",
         reply_markup=main_menu()
     )
 
-def record_income(update, context):
-    update.message.reply_text("لطفاً مبلغ درآمد را وارد کنید:")
+async def record_income(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("لطفاً مبلغ درآمد را وارد کنید:")
 
-def record_expense(update, context):
-    update.message.reply_text("لطفاً مبلغ هزینه را وارد کنید:")
+async def record_expense(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("لطفاً مبلغ هزینه را وارد کنید:")
 
-def show_report(update, context):
+async def show_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     total_income = sum(t[1] for t in transactions if t[0] == user_id and t[3] == 'income')
     total_expense = sum(t[1] for t in transactions if t[0] == user_id and t[3] == 'expense')
@@ -36,10 +37,10 @@ def show_report(update, context):
         remaining = budgets[user_id] - total_expense
         report += f"\n➖ باقی‌مانده بودجه: {remaining:,} تومان"
     
-    update.message.reply_text(report)
+    await update.message.reply_text(report)
 
-def set_budget(update, context):
-    update.message.reply_text("لطفاً مبلغ بودجه ماهانه را وارد کنید:")
+async def set_budget(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("لطفاً مبلغ بودجه ماهانه را وارد کنید:")
 
 def main_menu():
     return ReplyKeyboardMarkup(
