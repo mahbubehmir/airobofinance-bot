@@ -1,6 +1,7 @@
 from telegram import ReplyKeyboardMarkup, Update
 from telegram.ext import ContextTypes, ConversationHandler, MessageHandler, CommandHandler, filters
 from datetime import datetime
+AMOUNT_INCOME, AMOUNT_EXPENSE, AMOUNT_BUDGET = range(3)
 
 # Conversation states
 AMOUNT = 1
